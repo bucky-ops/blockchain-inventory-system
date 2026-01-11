@@ -1,0 +1,56 @@
+{
+  "name": "blockchain-inventory-system",
+  "version": "1.0.0",
+  "description": "Enterprise-grade blockchain inventory management system with AI agents",
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../ai-agents && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:ai-agents\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:ai-agents": "cd ai-agents && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend && npm run build:ai-agents",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:ai-agents": "cd ai-agents && npm run build",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:ai-agents && npm run test:blockchain",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "test:ai-agents": "cd ai-agents && npm test",
+    "test:blockchain": "cd blockchain && npx hardhat test",
+    "blockchain:deploy": "cd blockchain && npx hardhat run scripts/deploy.js --network localhost",
+    "blockchain:node": "cd blockchain && npx hardhat node",
+    "security:audit": "npm audit && cd backend && npm audit && cd ../frontend && npm audit",
+    "lint": "npm run lint:backend && npm run lint:frontend && npm run lint:ai-agents && npm run lint:blockchain",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:ai-agents": "cd ai-agents && npm run lint",
+    "lint:blockchain": "cd blockchain && npm run lint",
+    "start": "npm run start:backend & npm run start:frontend & npm run start:ai-agents",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
+    "start:ai-agents": "cd ai-agents && npm start"
+  },
+  "keywords": [
+    "blockchain",
+    "inventory",
+    "enterprise",
+    "ai-agents",
+    "self-healing",
+    "security"
+  ],
+  "author": "Enterprise Blockchain Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
