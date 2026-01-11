@@ -4,7 +4,7 @@
   "description": "Enterprise-grade blockchain inventory management system with AI agents",
   "main": "index.js",
   "scripts": {
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../ai-agents && npm install",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../ai-agents && npm install && cd ../blockchain && npm install && cd ../database && npm install",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:ai-agents\"",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
@@ -29,7 +29,15 @@
     "start": "npm run start:backend & npm run start:frontend & npm run start:ai-agents",
     "start:backend": "cd backend && npm start",
     "start:frontend": "cd frontend && npm start",
-    "start:ai-agents": "cd ai-agents && npm start"
+    "start:ai-agents": "cd ai-agents && npm start",
+    "deploy:local": "chmod +x scripts/deploy-local.sh && ./scripts/deploy-local.sh",
+    "deploy:infra": "docker-compose -f docker-compose.dev.yml up -d postgres redis",
+    "setup:db": "cd database && npx knex migrate:latest --env development && npx knex seed:run --env development",
+    "stop:all": "docker-compose -f docker-compose.dev.yml down && pkill -f 'npm run dev' || true",
+    "reset:db": "cd database && npx knex migrate:rollback --env development && npx knex migrate:latest --env development && npx knex seed:run --env development",
+    "logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "health": "curl -f http://localhost:3001/api/health && echo 'Backend OK' || echo 'Backend DOWN'",
+    "status": "npm run health && docker-compose -f docker-compose.dev.yml ps"
   },
   "keywords": [
     "blockchain",
