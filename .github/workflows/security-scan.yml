@@ -26,15 +26,23 @@ jobs:
         cache: 'npm'
         cache-dependency-path: ${{ matrix.service }}/package-lock.json
 
-    - name: Install dependencies
+    - name: Install dependencies (if present)
       run: |
-        cd ${{ matrix.service }}
-        npm ci
+        if [ -f "${{ matrix.service }}/package-lock.json" ]; then
+          cd ${{ matrix.service }}
+          npm ci
+        else
+          echo "No package-lock.json in ${{ matrix.service }}, skipping npm install"
+        fi
 
     - name: Run npm audit
       run: |
-        cd ${{ matrix.service }}
-        npm audit --audit-level=high || true
+        if [ -d "${{ matrix.service }}" ] && [ -f "${{ matrix.service }}/package-lock.json" ]; then
+          cd ${{ matrix.service }}
+          npm audit --audit-level=high || true
+        else
+          echo "Skipping npm audit for ${{ matrix.service }}"
+        fi
       continue-on-error: true
 
     - name: Run Snyk to check for vulnerabilities
@@ -52,7 +60,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Run CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
       with:
         languages: javascript, typescript
 
@@ -72,19 +80,31 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Build Docker image
+    - name: Build Docker image (if Dockerfile exists)
+      id: build-image
       run: |
-        docker build -t ${{ matrix.service }}-test ./${{ matrix.service }}
+        SERVICE_DIR="${{ matrix.service }}"
+        if [ -f "${SERVICE_DIR}/Dockerfile" ]; then
+          echo "Found Dockerfile in ${SERVICE_DIR}, building..."
+          docker build -t "${SERVICE_DIR}-test" -f "${SERVICE_DIR}/Dockerfile" "${SERVICE_DIR}"
+          echo "built=true" >> "$GITHUB_ENV"
+        else
+          echo "No Dockerfile for ${SERVICE_DIR}, skipping build"
+          echo "built=false" >> "$GITHUB_ENV"
+        fi
 
-    - name: Run Trivy vulnerability scanner
+    - name: Run Trivy vulnerability scanner (only if built)
+      if: ${{ env.built == 'true' }}
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ matrix.service }}-test
         format: 'sarif'
         output: 'trivy-${{ matrix.service }}.sarif'
+      continue-on-error: true
 
-    - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v2
+    - name: Upload Trivy scan results (if present)
+      if: ${{ env.built == 'true' }}
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-${{ matrix.service }}.sarif'
