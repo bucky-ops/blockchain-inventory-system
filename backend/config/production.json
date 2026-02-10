@@ -1,0 +1,58 @@
+{
+    "env": "production",
+    "server": {
+        "port": 3001,
+        "host": "0.0.0.0"
+    },
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "name": "inventory_db",
+        "user": "inventory_user",
+        "password": "your_secure_password_here",
+        "ssl": true,
+        "connectionLimit": 20
+    },
+    "redis": {
+        "host": "localhost",
+        "port": 6379,
+        "password": "",
+        "db": 0
+    },
+    "blockchain": {
+        "rpcUrl": "http://localhost:8545",
+        "networkId": 1,
+        "gasLimit": 6000000,
+        "gasPrice": 20000000000,
+        "contracts": {
+            "inventoryManager": "",
+            "userRegistry": "",
+            "auditLogger": ""
+        }
+    },
+    "jwt": {
+        "secret": "your_jwt_secret_minimum_32_characters",
+        "refreshSecret": "your_jwt_refresh_secret_minimum_32_characters",
+        "expiresIn": "15m",
+        "refreshExpiresIn": "7d"
+    },
+    "cors": {
+        "allowedOrigins": [
+            "https://your-production-domain.com"
+        ]
+    },
+    "rateLimit": {
+        "windowMs": 900000,
+        "maxRequests": 100
+    },
+    "logging": {
+        "level": "info",
+        "format": "json"
+    },
+    "monitoring": {
+        "enabled": true,
+        "healthCheckInterval": 30,
+        "apiUrl": "http://localhost:3001",
+        "apiHealthEndpoint": "/health"
+    }
+}

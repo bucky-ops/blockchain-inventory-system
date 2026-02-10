@@ -6,6 +6,7 @@ import { alertService } from '@/services/alertService';
 import { MetricCollector } from '@/utils/metricCollector';
 import { AnomalyDetector } from '@/utils/anomalyDetector';
 import { CircuitBreaker } from '@/utils/circuitBreaker';
+import config from '@/config';
 
 export interface MonitoringConfig {
   intervals: {
@@ -370,8 +371,11 @@ export class MonitoringAgent {
     const startTime = Date.now();
     
     try {
-      // Simple health check - would hit actual API endpoint
-      await fetch('http://localhost:3001/health');
+      // Use configured API URL and endpoint
+      const healthUrl = `${config.api.url}${config.api.healthEndpoint}`;
+      await fetch(healthUrl, { 
+        signal: AbortSignal.timeout(config.api.timeout) 
+      });
       const responseTime = Date.now() - startTime;
       
       return {
@@ -392,8 +396,20 @@ export class MonitoringAgent {
     const startTime = Date.now();
     
     try {
-      // This would use actual Redis client
-      // await redisClient.ping();
+      // Import and use Redis client
+      const { getRedisClient } = await import('@/services/redisService');
+      const redisClient = await getRedisClient();
+      
+      if (!redisClient) {
+        return {
+          status: 'down',
+          lastCheck: new Date(),
+          errorMessage: 'Redis client not available'
+        };
+      }
+      
+      // Test Redis connection with PING
+      await redisClient.ping();
       const responseTime = Date.now() - startTime;
       
       return {
