@@ -1,15 +1,12 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
-import { connectDatabase } from '@/config/database';
-import { connectBlockchain } from '@/config/blockchain';
-import { connectRedis } from '@/config/redis';
 import { logger } from '@/utils/logger';
 import { errorHandler } from '@/middleware/errorHandler';
-import { authMiddleware } from '@/middleware/auth';
+import { authMiddleware, AuthenticatedRequest } from '@/middleware/auth';
 import { auditLogger } from '@/middleware/auditLogger';
 import { requestLogger } from '@/middleware/requestLogger';
 
@@ -22,7 +19,7 @@ import adminRoutes from '@/routes/admin';
 import healthRoutes from '@/routes/health';
 
 // Configuration
-import config from 'config';
+import config from '@/config/appConfig';
 
 class App {
   public app: express.Application;

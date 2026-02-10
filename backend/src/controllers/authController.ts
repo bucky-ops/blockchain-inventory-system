@@ -3,15 +3,15 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { ethers } from 'ethers';
 import { logger } from '@/utils/logger';
-import { getUserByAddress, createUser, updateUserSession } from '@/services/userService';
-import { verifySignatureOnChain, verifyMessageSignature } from '@/services/blockchainService';
+import { getUserByAddress, createUser } from '@/services/userService';
+import { verifyMessageSignature } from '@/services/blockchainService';
 import { createNonce, storeNonce, consumeNonce } from '@/services/nonceService';
-import { redisClient } from '@/config/redis';
+import { createSession } from '@/services/sessionService';
+import config from '@/config/appConfig';
+import { AuthenticatedRequest, JWTPayload } from '@/types';
 import { 
   AuthenticationError, 
-  ValidationError, 
-  ConflictError,
-  AuthenticatedRequest 
+  ValidationError 
 } from '@/middleware/errorHandler';
 
 class AuthController {
@@ -95,15 +95,17 @@ class AuthController {
       await consumeNonce(address, nonce);
 
       // Create session
-      const sessionId = crypto.randomUUID();
-      const expiryTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
-
-      await updateUserSession(sessionId, {
-        userAddress: address,
-        loginTime: Date.now(),
+      const sessionToken = crypto.randomUUID();
+      const expiryTime = new Date(Date.now() + (24 * 60 * 60 * 1000)); // 24 hours
+      
+      const sessionId = await createSession(
+        user.id,
+        address,
+        sessionToken,
         expiryTime,
-        isActive: true
-      });
+        req.ip,
+        req.get('user-agent')
+      );
 
       // Generate tokens
       const accessToken = this.generateAccessToken(user, sessionId);
@@ -260,7 +262,7 @@ class AuthController {
       }
 
       // Verify refresh token
-      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as any;
+      const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret) as any;
       
       // Check if refresh token is still valid
       const storedToken = await redisClient.get(`refresh_token:${decoded.address}`);
@@ -353,17 +355,18 @@ class AuthController {
   };
 
   private generateAccessToken(user: any, sessionId: string): string {
-    return jwt.sign(
-      {
-        id: user.id,
-        address: user.walletAddress,
-        email: user.email,
-        role: user.role,
-        sessionId
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: '15m' }
-    );
+    const payload: JWTPayload = {
+      id: user.id,
+      address: user.walletAddress,
+      email: user.email,
+      role: user.role,
+      sessionId
+    };
+    
+    return jwt.sign(payload, config.jwt.secret, { 
+      expiresIn: config.jwt.expiresIn,
+      algorithm: 'HS256'
+    });
   }
 
   private generateRefreshToken(user: any): string {
@@ -373,8 +376,8 @@ class AuthController {
         address: user.walletAddress,
         type: 'refresh'
       },
-      process.env.JWT_REFRESH_SECRET!,
-      { expiresIn: '7d' }
+      config.jwt.refreshSecret,
+      { expiresIn: config.jwt.refreshExpiresIn }
     );
   }
 

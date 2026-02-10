@@ -4,6 +4,8 @@ import { ethers } from 'ethers';
 import { logger } from '@/utils/logger';
 import { getUserByAddress, updateUserSession } from '@/services/userService';
 import { hasRole } from '@/services/blockchainService';
+import { getUserSession as getSessionFromService, updateSession } from '@/services/sessionService';
+import config from '@/config/appConfig';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -34,7 +36,7 @@ export const authMiddleware = async (
     }
 
     // Verify JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, config.jwt.secret) as any;
     
     // Validate user exists and is active
     const user = await getUserByAddress(decoded.address);
@@ -192,7 +194,7 @@ function extractToken(req: Request): string | null {
 async function validateSession(sessionId: string, userAddress: string): Promise<boolean> {
   try {
     // Check session in database
-    const session = await getUserSession(sessionId);
+    const session = await getSessionFromService(sessionId);
     
     if (!session || !session.isActive) {
       return false;
@@ -203,26 +205,20 @@ async function validateSession(sessionId: string, userAddress: string): Promise<
     }
 
     // Check if session has expired
-    if (session.expiryTime < Date.now()) {
+    if (session.expiryTime.getTime() < Date.now()) {
       // Mark session as inactive
-      await updateUserSession(sessionId, { isActive: false });
+      await updateSession(sessionId, { isActive: false });
       return false;
     }
 
     // Update last activity
-    await updateUserSession(sessionId, { lastActivity: Date.now() });
+    await updateSession(sessionId, { lastActivity: new Date() });
     
     return true;
   } catch (error) {
     logger.error('Session validation error:', error);
     return false;
   }
-}
-
-async function getUserSession(sessionId: string): Promise<any> {
-  // This would typically query the database
-  // Implementation depends on your database structure
-  return null;
 }
 
 export const optionalAuth = async (
@@ -235,7 +231,7 @@ export const optionalAuth = async (
     
     if (token) {
       // If token exists, validate it and attach user info
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      const decoded = jwt.verify(token, config.jwt.secret) as any;
       const user = await getUserByAddress(decoded.address);
       
       if (user && user.status === 'Active') {
