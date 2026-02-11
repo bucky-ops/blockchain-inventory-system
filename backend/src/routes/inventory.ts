@@ -10,13 +10,13 @@ router.get('/', asyncHandler(inventoryController.getAll));
 router.get('/:id', asyncHandler(inventoryController.getOne));
 
 router.post(
-    '/',
-    [
-        body('sku').notEmpty().withMessage('SKU is required'),
-        body('name').notEmpty().withMessage('Name is required'),
-        body('quantity').isNumeric().withMessage('Quantity must be a number')
-    ],
-    asyncHandler(inventoryController.create)
+  '/',
+  [
+    body('sku').notEmpty().withMessage('SKU is required'),
+    body('name').notEmpty().withMessage('Name is required'),
+    body('quantity').isNumeric().withMessage('Quantity must be a number')
+  ],
+  asyncHandler(inventoryController.create)
 );
 
 router.put('/:id', asyncHandler(inventoryController.update));

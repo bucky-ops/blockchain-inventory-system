@@ -1,5 +1,5 @@
-import Redis from "ioredis";
-import { logger } from "@/utils/logger";
+import Redis from 'ioredis';
+import { logger } from '@/utils/logger';
 
 class RedisService {
   private client: Redis;
@@ -7,8 +7,8 @@ class RedisService {
 
   constructor() {
     this.client = new Redis({
-      host: process.env.REDIS_HOST || "localhost",
-      port: parseInt(process.env.REDIS_PORT || "6379"),
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
       password: process.env.REDIS_PASSWORD,
       retryDelayOnFailover: 100,
       maxRetriesPerRequest: 3,
@@ -19,23 +19,23 @@ class RedisService {
   }
 
   private setupEventListeners(): void {
-    this.client.on("connect", () => {
-      logger.info("✅ Redis connected successfully");
+    this.client.on('connect', () => {
+      logger.info('✅ Redis connected successfully');
       this.isConnected = true;
     });
 
-    this.client.on("error", (error) => {
-      logger.error("❌ Redis connection error:", error);
+    this.client.on('error', (error) => {
+      logger.error('❌ Redis connection error:', error);
       this.isConnected = false;
     });
 
-    this.client.on("close", () => {
-      logger.warn("⚠️ Redis connection closed");
+    this.client.on('close', () => {
+      logger.warn('⚠️ Redis connection closed');
       this.isConnected = false;
     });
 
-    this.client.on("reconnecting", () => {
-      logger.info("🔄 Redis reconnecting...");
+    this.client.on('reconnecting', () => {
+      logger.info('🔄 Redis reconnecting...');
     });
   }
 
@@ -43,7 +43,7 @@ class RedisService {
     try {
       await this.client.connect();
     } catch (error) {
-      logger.error("Failed to connect to Redis:", error);
+      logger.error('Failed to connect to Redis:', error);
       throw error;
     }
   }
@@ -52,7 +52,7 @@ class RedisService {
     try {
       await this.client.quit();
     } catch (error) {
-      logger.error("Error disconnecting from Redis:", error);
+      logger.error('Error disconnecting from Redis:', error);
       throw error;
     }
   }
@@ -71,7 +71,7 @@ class RedisService {
       const key = `session:${sessionToken}`;
       await this.client.setex(key, ttlSeconds, JSON.stringify(sessionData));
     } catch (error) {
-      logger.error("Error setting session in Redis:", error);
+      logger.error('Error setting session in Redis:', error);
       throw error;
     }
   }
@@ -82,7 +82,7 @@ class RedisService {
       const data = await this.client.get(key);
       return data ? JSON.parse(data) : null;
     } catch (error) {
-      logger.error("Error getting session from Redis:", error);
+      logger.error('Error getting session from Redis:', error);
       return null;
     }
   }
@@ -92,14 +92,14 @@ class RedisService {
       const key = `session:${sessionToken}`;
       await this.client.del(key);
     } catch (error) {
-      logger.error("Error deleting session from Redis:", error);
+      logger.error('Error deleting session from Redis:', error);
       throw error;
     }
   }
 
   public async invalidateUserSessions(userId: string): Promise<void> {
     try {
-      const pattern = `session:*`;
+      const pattern = 'session:*';
       const keys = await this.client.keys(pattern);
 
       for (const key of keys) {
@@ -112,7 +112,7 @@ class RedisService {
         }
       }
     } catch (error) {
-      logger.error("Error invalidating user sessions in Redis:", error);
+      logger.error('Error invalidating user sessions in Redis:', error);
       throw error;
     }
   }
@@ -127,7 +127,7 @@ class RedisService {
       const key = `user:${userId}`;
       await this.client.setex(key, ttlSeconds, JSON.stringify(userData));
     } catch (error) {
-      logger.error("Error caching user in Redis:", error);
+      logger.error('Error caching user in Redis:', error);
       throw error;
     }
   }
@@ -138,7 +138,7 @@ class RedisService {
       const data = await this.client.get(key);
       return data ? JSON.parse(data) : null;
     } catch (error) {
-      logger.error("Error getting cached user from Redis:", error);
+      logger.error('Error getting cached user from Redis:', error);
       return null;
     }
   }
@@ -148,7 +148,7 @@ class RedisService {
       const key = `user:${userId}`;
       await this.client.del(key);
     } catch (error) {
-      logger.error("Error invalidating user cache in Redis:", error);
+      logger.error('Error invalidating user cache in Redis:', error);
       throw error;
     }
   }
@@ -163,7 +163,7 @@ class RedisService {
       const key = `inventory:${itemId}`;
       await this.client.setex(key, ttlSeconds, JSON.stringify(itemData));
     } catch (error) {
-      logger.error("Error caching inventory item in Redis:", error);
+      logger.error('Error caching inventory item in Redis:', error);
       throw error;
     }
   }
@@ -174,7 +174,7 @@ class RedisService {
       const data = await this.client.get(key);
       return data ? JSON.parse(data) : null;
     } catch (error) {
-      logger.error("Error getting cached inventory item from Redis:", error);
+      logger.error('Error getting cached inventory item from Redis:', error);
       return null;
     }
   }
@@ -184,7 +184,7 @@ class RedisService {
       const key = `inventory:${itemId}`;
       await this.client.del(key);
     } catch (error) {
-      logger.error("Error invalidating inventory cache in Redis:", error);
+      logger.error('Error invalidating inventory cache in Redis:', error);
       throw error;
     }
   }
@@ -198,7 +198,7 @@ class RedisService {
       const key = `inventory_list:${cacheKey}`;
       await this.client.setex(key, ttlSeconds, JSON.stringify(items));
     } catch (error) {
-      logger.error("Error caching inventory list in Redis:", error);
+      logger.error('Error caching inventory list in Redis:', error);
       throw error;
     }
   }
@@ -209,7 +209,7 @@ class RedisService {
       const data = await this.client.get(key);
       return data ? JSON.parse(data) : null;
     } catch (error) {
-      logger.error("Error getting cached inventory list from Redis:", error);
+      logger.error('Error getting cached inventory list from Redis:', error);
       return null;
     }
   }
@@ -224,7 +224,7 @@ class RedisService {
       const key = `nonce:${walletAddress}`;
       await this.client.setex(key, ttlSeconds, nonce);
     } catch (error) {
-      logger.error("Error setting nonce in Redis:", error);
+      logger.error('Error setting nonce in Redis:', error);
       throw error;
     }
   }
@@ -234,7 +234,7 @@ class RedisService {
       const key = `nonce:${walletAddress}`;
       return await this.client.get(key);
     } catch (error) {
-      logger.error("Error getting nonce from Redis:", error);
+      logger.error('Error getting nonce from Redis:', error);
       return null;
     }
   }
@@ -244,7 +244,7 @@ class RedisService {
       const key = `nonce:${walletAddress}`;
       await this.client.del(key);
     } catch (error) {
-      logger.error("Error deleting nonce from Redis:", error);
+      logger.error('Error deleting nonce from Redis:', error);
       throw error;
     }
   }
@@ -265,7 +265,7 @@ class RedisService {
 
       return current <= limit;
     } catch (error) {
-      logger.error("Error checking rate limit in Redis:", error);
+      logger.error('Error checking rate limit in Redis:', error);
       return true; // Allow request if Redis fails
     }
   }
@@ -276,7 +276,7 @@ class RedisService {
       const count = await this.client.get(key);
       return count ? parseInt(count) : 0;
     } catch (error) {
-      logger.error("Error getting rate limit count from Redis:", error);
+      logger.error('Error getting rate limit count from Redis:', error);
       return 0;
     }
   }
@@ -289,15 +289,15 @@ class RedisService {
         await this.client.del(...keys);
       }
     } catch (error) {
-      logger.error("Error clearing cache in Redis:", error);
+      logger.error('Error clearing cache in Redis:', error);
       throw error;
     }
   }
 
   public async getCacheInfo(): Promise<any> {
     try {
-      const info = await this.client.info("memory");
-      const keyspace = await this.client.info("keyspace");
+      const info = await this.client.info('memory');
+      const keyspace = await this.client.info('keyspace');
 
       return {
         memory: info,
@@ -305,7 +305,7 @@ class RedisService {
         connected: this.isConnected,
       };
     } catch (error) {
-      logger.error("Error getting Redis cache info:", error);
+      logger.error('Error getting Redis cache info:', error);
       return null;
     }
   }
@@ -314,9 +314,9 @@ class RedisService {
   public async healthCheck(): Promise<boolean> {
     try {
       const result = await this.client.ping();
-      return result === "PONG";
+      return result === 'PONG';
     } catch (error) {
-      logger.error("Redis health check failed:", error);
+      logger.error('Redis health check failed:', error);
       return false;
     }
   }
@@ -335,7 +335,7 @@ class RedisService {
         await this.client.set(key, serializedValue);
       }
     } catch (error) {
-      logger.error("Error setting value in Redis:", error);
+      logger.error('Error setting value in Redis:', error);
       throw error;
     }
   }
@@ -345,7 +345,7 @@ class RedisService {
       const data = await this.client.get(key);
       return data ? JSON.parse(data) : null;
     } catch (error) {
-      logger.error("Error getting value from Redis:", error);
+      logger.error('Error getting value from Redis:', error);
       return null;
     }
   }
@@ -354,7 +354,7 @@ class RedisService {
     try {
       await this.client.del(key);
     } catch (error) {
-      logger.error("Error deleting value from Redis:", error);
+      logger.error('Error deleting value from Redis:', error);
       throw error;
     }
   }
@@ -364,7 +364,7 @@ class RedisService {
       const result = await this.client.exists(key);
       return result === 1;
     } catch (error) {
-      logger.error("Error checking if key exists in Redis:", error);
+      logger.error('Error checking if key exists in Redis:', error);
       return false;
     }
   }
@@ -373,7 +373,7 @@ class RedisService {
     try {
       await this.client.expire(key, ttlSeconds);
     } catch (error) {
-      logger.error("Error setting expiry in Redis:", error);
+      logger.error('Error setting expiry in Redis:', error);
       throw error;
     }
   }

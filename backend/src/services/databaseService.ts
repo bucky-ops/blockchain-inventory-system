@@ -1,12 +1,12 @@
-import { pool } from "@/config/database";
-import { logger } from "@/utils/logger";
+import { pool } from '@/config/database';
+import { logger } from '@/utils/logger';
 
 interface User {
   id: string;
   wallet_address: string;
   email?: string;
   username: string;
-  role: "admin" | "manager" | "user" | "viewer";
+  role: 'admin' | 'manager' | 'user' | 'viewer';
   is_active: boolean;
   last_login?: Date;
   created_at: Date;
@@ -23,7 +23,7 @@ interface InventoryItem {
   unit_price?: number;
   supplier?: string;
   location?: string;
-  status: "active" | "inactive" | "discontinued" | "out_of_stock";
+  status: 'active' | 'inactive' | 'discontinued' | 'out_of_stock';
   owner_id?: string;
   blockchain_tx_hash?: string;
   blockchain_timestamp?: Date;
@@ -34,7 +34,7 @@ interface InventoryItem {
 interface InventoryMovement {
   id: string;
   item_id: string;
-  movement_type: "in" | "out" | "adjustment" | "transfer";
+  movement_type: 'in' | 'out' | 'adjustment' | 'transfer';
   quantity: number;
   previous_quantity: number;
   new_quantity: number;
@@ -78,10 +78,10 @@ class DatabaseService {
   // Health and System Operations
   public async healthCheck(): Promise<boolean> {
     try {
-      await pool.query("SELECT 1");
+      await pool.query('SELECT 1');
       return true;
     } catch (error) {
-      logger.error("Database health check failed:", error);
+      logger.error('Database health check failed:', error);
       throw error;
     }
   }
@@ -98,7 +98,7 @@ class DatabaseService {
             `);
       return result.rows;
     } catch (error) {
-      logger.error("Error checking inventory discrepancies:", error);
+      logger.error('Error checking inventory discrepancies:', error);
       return [];
     }
   }
@@ -120,7 +120,7 @@ class DatabaseService {
         ],
       );
     } catch (error) {
-      logger.error("Error storing anomaly:", error);
+      logger.error('Error storing anomaly:', error);
     }
   }
 
@@ -136,24 +136,24 @@ class DatabaseService {
         userData.wallet_address,
         userData.email,
         userData.username,
-        userData.role || "user",
+        userData.role || 'user',
         userData.is_active !== false,
       ]);
       return result.rows[0];
     } catch (error) {
-      logger.error("Error creating user:", error);
+      logger.error('Error creating user:', error);
       throw error;
     }
   }
 
   public async getUserById(userId: string): Promise<User | null> {
     try {
-      const result = await pool.query("SELECT * FROM users WHERE id = $1", [
+      const result = await pool.query('SELECT * FROM users WHERE id = $1', [
         userId,
       ]);
       return result.rows[0] || null;
     } catch (error) {
-      logger.error("Error getting user by ID:", error);
+      logger.error('Error getting user by ID:', error);
       throw error;
     }
   }
@@ -163,12 +163,12 @@ class DatabaseService {
   ): Promise<User | null> {
     try {
       const result = await pool.query(
-        "SELECT * FROM users WHERE wallet_address = $1",
+        'SELECT * FROM users WHERE wallet_address = $1',
         [walletAddress],
       );
       return result.rows[0] || null;
     } catch (error) {
-      logger.error("Error getting user by wallet address:", error);
+      logger.error('Error getting user by wallet address:', error);
       throw error;
     }
   }
@@ -178,11 +178,11 @@ class DatabaseService {
     updates: Partial<User>,
   ): Promise<User> {
     try {
-      const fields = Object.keys(updates).filter((key) => key !== "id");
+      const fields = Object.keys(updates).filter((key) => key !== 'id');
       const values = fields.map((field) => updates[field as keyof User]);
       const setClause = fields
         .map((field, index) => `${field} = $${index + 2}`)
-        .join(", ");
+        .join(', ');
 
       const query = `
                 UPDATE users 
@@ -193,7 +193,7 @@ class DatabaseService {
       const result = await pool.query(query, [userId, ...values]);
       return result.rows[0];
     } catch (error) {
-      logger.error("Error updating user:", error);
+      logger.error('Error updating user:', error);
       throw error;
     }
   }
@@ -201,12 +201,12 @@ class DatabaseService {
   public async getAllUsers(limit = 50, offset = 0): Promise<User[]> {
     try {
       const result = await pool.query(
-        "SELECT * FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+        'SELECT * FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2',
         [limit, offset],
       );
       return result.rows;
     } catch (error) {
-      logger.error("Error getting all users:", error);
+      logger.error('Error getting all users:', error);
       throw error;
     }
   }
@@ -233,12 +233,12 @@ class DatabaseService {
         itemData.unit_price,
         itemData.supplier,
         itemData.location,
-        itemData.status || "active",
+        itemData.status || 'active',
         itemData.owner_id,
       ]);
       return result.rows[0];
     } catch (error) {
-      logger.error("Error creating inventory item:", error);
+      logger.error('Error creating inventory item:', error);
       throw error;
     }
   }
@@ -248,12 +248,12 @@ class DatabaseService {
   ): Promise<InventoryItem | null> {
     try {
       const result = await pool.query(
-        "SELECT * FROM inventory_items WHERE id = $1",
+        'SELECT * FROM inventory_items WHERE id = $1',
         [itemId],
       );
       return result.rows[0] || null;
     } catch (error) {
-      logger.error("Error getting inventory item by ID:", error);
+      logger.error('Error getting inventory item by ID:', error);
       throw error;
     }
   }
@@ -263,12 +263,12 @@ class DatabaseService {
   ): Promise<InventoryItem | null> {
     try {
       const result = await pool.query(
-        "SELECT * FROM inventory_items WHERE sku = $1",
+        'SELECT * FROM inventory_items WHERE sku = $1',
         [sku],
       );
       return result.rows[0] || null;
     } catch (error) {
-      logger.error("Error getting inventory item by SKU:", error);
+      logger.error('Error getting inventory item by SKU:', error);
       throw error;
     }
   }
@@ -278,13 +278,13 @@ class DatabaseService {
     updates: Partial<InventoryItem>,
   ): Promise<InventoryItem> {
     try {
-      const fields = Object.keys(updates).filter((key) => key !== "id");
+      const fields = Object.keys(updates).filter((key) => key !== 'id');
       const values = fields.map(
         (field) => updates[field as keyof InventoryItem],
       );
       const setClause = fields
         .map((field, index) => `${field} = $${index + 2}`)
-        .join(", ");
+        .join(', ');
 
       const query = `
                 UPDATE inventory_items 
@@ -295,16 +295,16 @@ class DatabaseService {
       const result = await pool.query(query, [itemId, ...values]);
       return result.rows[0];
     } catch (error) {
-      logger.error("Error updating inventory item:", error);
+      logger.error('Error updating inventory item:', error);
       throw error;
     }
   }
 
   public async deleteInventoryItem(itemId: string): Promise<void> {
     try {
-      await pool.query("DELETE FROM inventory_items WHERE id = $1", [itemId]);
+      await pool.query('DELETE FROM inventory_items WHERE id = $1', [itemId]);
     } catch (error) {
-      logger.error("Error deleting inventory item:", error);
+      logger.error('Error deleting inventory item:', error);
       throw error;
     }
   }
@@ -315,7 +315,7 @@ class DatabaseService {
     filters?: any,
   ): Promise<InventoryItem[]> {
     try {
-      let query = "SELECT * FROM inventory_items WHERE 1=1";
+      let query = 'SELECT * FROM inventory_items WHERE 1=1';
       const params: any[] = [];
       let paramIndex = 1;
 
@@ -338,7 +338,7 @@ class DatabaseService {
       const result = await pool.query(query, params);
       return result.rows;
     } catch (error) {
-      logger.error("Error getting all inventory items:", error);
+      logger.error('Error getting all inventory items:', error);
       throw error;
     }
   }
@@ -368,7 +368,7 @@ class DatabaseService {
       ]);
       return result.rows[0];
     } catch (error) {
-      logger.error("Error creating inventory movement:", error);
+      logger.error('Error creating inventory movement:', error);
       throw error;
     }
   }
@@ -379,12 +379,12 @@ class DatabaseService {
   ): Promise<InventoryMovement[]> {
     try {
       const result = await pool.query(
-        "SELECT * FROM inventory_movements WHERE item_id = $1 ORDER BY created_at DESC LIMIT $2",
+        'SELECT * FROM inventory_movements WHERE item_id = $1 ORDER BY created_at DESC LIMIT $2',
         [itemId, limit],
       );
       return result.rows;
     } catch (error) {
-      logger.error("Error getting inventory movements:", error);
+      logger.error('Error getting inventory movements:', error);
       throw error;
     }
   }
@@ -412,7 +412,7 @@ class DatabaseService {
       ]);
       return result.rows[0];
     } catch (error) {
-      logger.error("Error creating audit log:", error);
+      logger.error('Error creating audit log:', error);
       throw error;
     }
   }
@@ -423,7 +423,7 @@ class DatabaseService {
     filters?: any,
   ): Promise<AuditLog[]> {
     try {
-      let query = "SELECT * FROM audit_logs WHERE 1=1";
+      let query = 'SELECT * FROM audit_logs WHERE 1=1';
       const params: any[] = [];
       let paramIndex = 1;
 
@@ -446,7 +446,7 @@ class DatabaseService {
       const result = await pool.query(query, params);
       return result.rows;
     } catch (error) {
-      logger.error("Error getting audit logs:", error);
+      logger.error('Error getting audit logs:', error);
       throw error;
     }
   }
@@ -475,7 +475,7 @@ class DatabaseService {
       ]);
       return result.rows[0];
     } catch (error) {
-      logger.error("Error creating session:", error);
+      logger.error('Error creating session:', error);
       throw error;
     }
   }
@@ -483,12 +483,12 @@ class DatabaseService {
   public async getSessionByToken(token: string): Promise<UserSession | null> {
     try {
       const result = await pool.query(
-        "SELECT * FROM user_sessions WHERE session_token = $1 AND is_active = true AND expires_at > NOW()",
+        'SELECT * FROM user_sessions WHERE session_token = $1 AND is_active = true AND expires_at > NOW()',
         [token],
       );
       return result.rows[0] || null;
     } catch (error) {
-      logger.error("Error getting session by token:", error);
+      logger.error('Error getting session by token:', error);
       throw error;
     }
   }
@@ -496,11 +496,11 @@ class DatabaseService {
   public async updateSessionLastAccessed(sessionId: string): Promise<void> {
     try {
       await pool.query(
-        "UPDATE user_sessions SET last_accessed = NOW() WHERE id = $1",
+        'UPDATE user_sessions SET last_accessed = NOW() WHERE id = $1',
         [sessionId],
       );
     } catch (error) {
-      logger.error("Error updating session last accessed:", error);
+      logger.error('Error updating session last accessed:', error);
       throw error;
     }
   }
@@ -508,11 +508,11 @@ class DatabaseService {
   public async invalidateSession(token: string): Promise<void> {
     try {
       await pool.query(
-        "UPDATE user_sessions SET is_active = false WHERE session_token = $1",
+        'UPDATE user_sessions SET is_active = false WHERE session_token = $1',
         [token],
       );
     } catch (error) {
-      logger.error("Error invalidating session:", error);
+      logger.error('Error invalidating session:', error);
       throw error;
     }
   }
@@ -520,11 +520,11 @@ class DatabaseService {
   public async invalidateAllUserSessions(userId: string): Promise<void> {
     try {
       await pool.query(
-        "UPDATE user_sessions SET is_active = false WHERE user_id = $1",
+        'UPDATE user_sessions SET is_active = false WHERE user_id = $1',
         [userId],
       );
     } catch (error) {
-      logger.error("Error invalidating all user sessions:", error);
+      logger.error('Error invalidating all user sessions:', error);
       throw error;
     }
   }
@@ -532,20 +532,20 @@ class DatabaseService {
   // Summary and Analytics Operations
   public async getInventorySummary(): Promise<any> {
     try {
-      const result = await pool.query("SELECT * FROM inventory_summary");
+      const result = await pool.query('SELECT * FROM inventory_summary');
       return result.rows;
     } catch (error) {
-      logger.error("Error getting inventory summary:", error);
+      logger.error('Error getting inventory summary:', error);
       throw error;
     }
   }
 
   public async getUserActivitySummary(): Promise<any> {
     try {
-      const result = await pool.query("SELECT * FROM user_activity_summary");
+      const result = await pool.query('SELECT * FROM user_activity_summary');
       return result.rows;
     } catch (error) {
-      logger.error("Error getting user activity summary:", error);
+      logger.error('Error getting user activity summary:', error);
       throw error;
     }
   }
@@ -553,12 +553,12 @@ class DatabaseService {
   public async getSystemConfig(key: string): Promise<string | null> {
     try {
       const result = await pool.query(
-        "SELECT value FROM system_config WHERE key = $1",
+        'SELECT value FROM system_config WHERE key = $1',
         [key],
       );
       return result.rows[0]?.value || null;
     } catch (error) {
-      logger.error("Error getting system config:", error);
+      logger.error('Error getting system config:', error);
       throw error;
     }
   }
@@ -570,11 +570,11 @@ class DatabaseService {
   ): Promise<void> {
     try {
       await pool.query(
-        "UPDATE system_config SET value = $1, updated_by = $2, updated_at = NOW() WHERE key = $3",
+        'UPDATE system_config SET value = $1, updated_by = $2, updated_at = NOW() WHERE key = $3',
         [value, updatedBy, key],
       );
     } catch (error) {
-      logger.error("Error updating system config:", error);
+      logger.error('Error updating system config:', error);
       throw error;
     }
   }
