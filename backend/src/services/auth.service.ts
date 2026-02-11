@@ -1,22 +1,22 @@
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
-import { ethers } from "ethers";
-import { logger } from "@/utils/logger";
-import { databaseService } from "./databaseService";
-import { blockchainService } from "./blockchainService";
-import { redisService } from "./redis.service";
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { ethers } from 'ethers';
+import { logger } from '@/utils/logger';
+import { databaseService } from './databaseService';
+import { blockchainService } from './blockchainService';
+import { redisService } from './redis.service';
 import {
   AuthenticationError,
   ValidationError,
   ConflictError,
-} from "@/middleware/errorHandler";
+} from '@/middleware/errorHandler';
 
 interface AuthUser {
   id: string;
   wallet_address: string;
   email?: string;
   username: string;
-  role: "admin" | "manager" | "user" | "viewer";
+  role: 'admin' | 'manager' | 'user' | 'viewer';
   is_active: boolean;
   last_login?: Date;
   created_at: Date;
@@ -40,18 +40,18 @@ interface RegisterRequest {
   address: string;
   username: string;
   email?: string;
-  role: "admin" | "manager" | "user" | "viewer";
+  role: 'admin' | 'manager' | 'user' | 'viewer';
   adminSignature?: string;
 }
 
 class AuthenticationService {
   private readonly JWT_SECRET =
-    process.env.JWT_SECRET || "default-secret-change-in-production";
+    process.env.JWT_SECRET || 'default-secret-change-in-production';
   private readonly JWT_REFRESH_SECRET =
     process.env.JWT_REFRESH_SECRET ||
-    "default-refresh-secret-change-in-production";
-  private readonly ACCESS_TOKEN_EXPIRY = "15m";
-  private readonly REFRESH_TOKEN_EXPIRY = "7d";
+    'default-refresh-secret-change-in-production';
+  private readonly ACCESS_TOKEN_EXPIRY = '15m';
+  private readonly REFRESH_TOKEN_EXPIRY = '7d';
   private readonly NONCE_EXPIRY = 300; // 5 minutes
 
   /**
@@ -62,24 +62,24 @@ class AuthenticationService {
   ): Promise<{ nonce: string; expiresAt: string }> {
     try {
       if (!address || !ethers.isAddress(address)) {
-        throw new ValidationError("Valid wallet address is required");
+        throw new ValidationError('Valid wallet address is required');
       }
 
       // Generate cryptographically secure nonce
-      const nonce = crypto.randomBytes(16).toString("hex");
+      const nonce = crypto.randomBytes(16).toString('hex');
       const expiresAt = new Date(Date.now() + this.NONCE_EXPIRY * 1000);
 
       // Store nonce in Redis with expiry
       await redisService.setNonce(address, nonce, this.NONCE_EXPIRY);
 
-      logger.info("Nonce generated", { address, nonce });
+      logger.info('Nonce generated', { address, nonce });
 
       return {
         nonce,
         expiresAt: expiresAt.toISOString(),
       };
     } catch (error) {
-      logger.error("Error generating nonce:", error);
+      logger.error('Error generating nonce:', error);
       throw error;
     }
   }
@@ -94,18 +94,18 @@ class AuthenticationService {
       const { address, signature, nonce } = loginData;
 
       if (!address || !signature || !nonce) {
-        throw new ValidationError("Address, signature, and nonce are required");
+        throw new ValidationError('Address, signature, and nonce are required');
       }
 
       // Validate address format
       if (!ethers.isAddress(address)) {
-        throw new ValidationError("Invalid wallet address");
+        throw new ValidationError('Invalid wallet address');
       }
 
       // Verify nonce from Redis
       const storedNonce = await redisService.getNonce(address);
       if (!storedNonce || storedNonce !== nonce) {
-        throw new AuthenticationError("Invalid or expired nonce");
+        throw new AuthenticationError('Invalid or expired nonce');
       }
 
       // Verify signature
@@ -116,23 +116,23 @@ class AuthenticationService {
       );
 
       if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
-        throw new AuthenticationError("Invalid signature");
+        throw new AuthenticationError('Invalid signature');
       }
 
       // Get user from database
       let user = await databaseService.getUserByWalletAddress(address);
       if (!user) {
-        throw new AuthenticationError("User not found. Please register first.");
+        throw new AuthenticationError('User not found. Please register first.');
       }
 
       if (!user.is_active) {
-        throw new AuthenticationError("User account is not active");
+        throw new AuthenticationError('User account is not active');
       }
 
       // Verify role on blockchain (if contracts are available)
       const blockchainRole = await blockchainService.getUserRole(address);
       if (blockchainRole && blockchainRole !== user.role) {
-        logger.warn("Role mismatch between database and blockchain", {
+        logger.warn('Role mismatch between database and blockchain', {
           address,
           dbRole: user.role,
           blockchainRole,
@@ -178,7 +178,7 @@ class AuthenticationService {
         7 * 24 * 60 * 60,
       ); // 7 days
 
-      logger.info("User logged in", {
+      logger.info('User logged in', {
         address,
         role: user.role,
         sessionId,
@@ -190,7 +190,7 @@ class AuthenticationService {
         sessionId,
       };
     } catch (error) {
-      logger.error("Login error:", error);
+      logger.error('Login error:', error);
       throw error;
     }
   }
@@ -206,18 +206,18 @@ class AuthenticationService {
       const { address, username, email, role, adminSignature } = registerData;
 
       if (!address || !username || !role) {
-        throw new ValidationError("Address, username, and role are required");
+        throw new ValidationError('Address, username, and role are required');
       }
 
       if (!ethers.isAddress(address)) {
-        throw new ValidationError("Invalid wallet address");
+        throw new ValidationError('Invalid wallet address');
       }
 
       // Check if user already exists
       const existingUser =
         await databaseService.getUserByWalletAddress(address);
       if (existingUser) {
-        throw new ConflictError("User already exists");
+        throw new ConflictError('User already exists');
       }
 
       // If admin registration, verify admin signature
@@ -231,14 +231,14 @@ class AuthenticationService {
         if (
           recoveredAdminAddress.toLowerCase() !== adminAddress.toLowerCase()
         ) {
-          throw new AuthenticationError("Invalid admin signature");
+          throw new AuthenticationError('Invalid admin signature');
         }
 
         // Verify admin has admin role
         const admin =
           await databaseService.getUserByWalletAddress(adminAddress);
-        if (!admin || admin.role !== "admin") {
-          throw new AuthenticationError("Only admins can register users");
+        if (!admin || admin.role !== 'admin') {
+          throw new AuthenticationError('Only admins can register users');
         }
       }
 
@@ -260,7 +260,7 @@ class AuthenticationService {
           username,
           role,
         );
-        logger.info("User registered on blockchain", { address, txHash });
+        logger.info('User registered on blockchain', { address, txHash });
 
         // Update user with blockchain transaction
         await databaseService.updateUser(user.id, {
@@ -268,23 +268,23 @@ class AuthenticationService {
           blockchain_timestamp: new Date(),
         });
       } catch (blockchainError) {
-        logger.warn("Failed to register user on blockchain:", blockchainError);
+        logger.warn('Failed to register user on blockchain:', blockchainError);
         // Continue with database registration only
       }
 
       // Cache user in Redis
       await redisService.cacheUser(user.id, user, 3600);
 
-      logger.info("User registered", {
+      logger.info('User registered', {
         address,
         username,
         role,
-        registeredBy: adminAddress || "self",
+        registeredBy: adminAddress || 'self',
       });
 
       return this.sanitizeUser(user);
     } catch (error) {
-      logger.error("Registration error:", error);
+      logger.error('Registration error:', error);
       throw error;
     }
   }
@@ -310,10 +310,10 @@ class AuthenticationService {
         // Remove refresh token
         await redisService.del(`refresh_token:${session.wallet_address}`);
 
-        logger.info("User logged out", { address: session.wallet_address });
+        logger.info('User logged out', { address: session.wallet_address });
       }
     } catch (error) {
-      logger.error("Logout error:", error);
+      logger.error('Logout error:', error);
       throw error;
     }
   }
@@ -324,7 +324,7 @@ class AuthenticationService {
   public async refreshToken(refreshToken: string): Promise<AuthTokens> {
     try {
       if (!refreshToken) {
-        throw new AuthenticationError("Refresh token is required");
+        throw new AuthenticationError('Refresh token is required');
       }
 
       // Verify refresh token
@@ -335,7 +335,7 @@ class AuthenticationService {
         `refresh_token:${decoded.address}`,
       );
       if (storedToken !== refreshToken) {
-        throw new AuthenticationError("Invalid refresh token");
+        throw new AuthenticationError('Invalid refresh token');
       }
 
       // Get user from database or cache
@@ -343,7 +343,7 @@ class AuthenticationService {
       if (!user) {
         user = await databaseService.getUserByWalletAddress(decoded.address);
         if (!user || !user.is_active) {
-          throw new AuthenticationError("User not found or inactive");
+          throw new AuthenticationError('User not found or inactive');
         }
         await redisService.cacheUser(user.id, user, 3600);
       }
@@ -351,12 +351,12 @@ class AuthenticationService {
       // Generate new access token
       const tokens = this.generateTokens(user, decoded.sessionId);
 
-      logger.info("Token refreshed", { address: decoded.address });
+      logger.info('Token refreshed', { address: decoded.address });
 
       return tokens;
     } catch (error) {
-      logger.error("Token refresh error:", error);
-      throw new AuthenticationError("Invalid or expired refresh token");
+      logger.error('Token refresh error:', error);
+      throw new AuthenticationError('Invalid or expired refresh token');
     }
   }
 
@@ -368,7 +368,7 @@ class AuthenticationService {
   ): Promise<{ user: AuthUser; sessionId: string }> {
     try {
       if (!token) {
-        throw new AuthenticationError("Token is required");
+        throw new AuthenticationError('Token is required');
       }
 
       // Verify JWT token
@@ -379,7 +379,7 @@ class AuthenticationService {
       if (!user) {
         user = await databaseService.getUserById(decoded.id);
         if (!user || !user.is_active) {
-          throw new AuthenticationError("User not found or inactive");
+          throw new AuthenticationError('User not found or inactive');
         }
         await redisService.cacheUser(user.id, user, 3600);
       }
@@ -391,7 +391,7 @@ class AuthenticationService {
         !session.is_active ||
         new Date(session.expires_at) < new Date()
       ) {
-        throw new AuthenticationError("Session expired or invalid");
+        throw new AuthenticationError('Session expired or invalid');
       }
 
       // Update session last accessed
@@ -403,8 +403,8 @@ class AuthenticationService {
         sessionId: decoded.sessionId,
       };
     } catch (error) {
-      logger.error("Token validation error:", error);
-      throw new AuthenticationError("Invalid or expired token");
+      logger.error('Token validation error:', error);
+      throw new AuthenticationError('Invalid or expired token');
     }
   }
 
@@ -417,14 +417,14 @@ class AuthenticationService {
       if (!user) {
         user = await databaseService.getUserById(userId);
         if (!user) {
-          throw new AuthenticationError("User not found");
+          throw new AuthenticationError('User not found');
         }
         await redisService.cacheUser(user.id, user, 3600);
       }
 
       return this.sanitizeUser(user);
     } catch (error) {
-      logger.error("Get profile error:", error);
+      logger.error('Get profile error:', error);
       throw error;
     }
   }
@@ -442,11 +442,11 @@ class AuthenticationService {
       // Update cache
       await redisService.cacheUser(user.id, user, 3600);
 
-      logger.info("User profile updated", { userId, updates });
+      logger.info('User profile updated', { userId, updates });
 
       return this.sanitizeUser(user);
     } catch (error) {
-      logger.error("Update profile error:", error);
+      logger.error('Update profile error:', error);
       throw error;
     }
   }
@@ -462,7 +462,7 @@ class AuthenticationService {
     try {
       if (!message || !signature || !address) {
         throw new ValidationError(
-          "Message, signature, and address are required",
+          'Message, signature, and address are required',
         );
       }
 
@@ -477,7 +477,7 @@ class AuthenticationService {
         recoveredAddress: isValid ? recoveredAddress : undefined,
       };
     } catch (error) {
-      logger.error("Signature verification error:", error);
+      logger.error('Signature verification error:', error);
       return { isValid: false };
     }
   }
@@ -502,9 +502,9 @@ class AuthenticationService {
       // Remove user from cache
       await redisService.invalidateUserCache(userId);
 
-      logger.info("All user sessions invalidated", { userId, walletAddress });
+      logger.info('All user sessions invalidated', { userId, walletAddress });
     } catch (error) {
-      logger.error("Invalidate sessions error:", error);
+      logger.error('Invalidate sessions error:', error);
       throw error;
     }
   }
@@ -531,7 +531,7 @@ class AuthenticationService {
         id: user.id,
         address: user.wallet_address,
         sessionId,
-        type: "refresh",
+        type: 'refresh',
       },
       this.JWT_REFRESH_SECRET,
       { expiresIn: this.REFRESH_TOKEN_EXPIRY },
@@ -541,7 +541,7 @@ class AuthenticationService {
       accessToken,
       refreshToken,
       expiresIn: 15 * 60, // 15 minutes in seconds
-      tokenType: "Bearer",
+      tokenType: 'Bearer',
     };
   }
 
